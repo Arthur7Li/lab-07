@@ -86,7 +86,12 @@ Your `check.sh` must:
 * Verify, for **each** of the 4 Testcases, that your output in `diffoutput` is correct:
   * If the two versions of the Testcase differ, `diffoutput/Testcase#Output` must exist **and** its contents must match what `diff -u` reports for those two files
   * If the two versions are identical, `diffoutput/Testcase#Output` must **not** exist
-* Print one line per Testcase saying `PASS` or `FAIL` (for example: `Testcase2: PASS`)
+* Print one line per Testcase saying `PASS` or `FAIL`
+    For example:
+          Testcase1: PASS
+          Testcase2: PASS
+          Testcase3: FAIL
+          Testcase4: PASS
 * Exit with status `0` if every Testcase is correct, and a non-zero status if any Testcase is incorrect
 
 Hints:
