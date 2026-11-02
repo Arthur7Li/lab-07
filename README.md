@@ -69,10 +69,10 @@ If there are no differences on a line, `diff` will simply show the line common b
 ```
 
 ## Task
-Your task is to create a bash script (script.sh) that compares files against each other using diff. There are 4 Testcases, each with two different versions of text files. Each Testcase contains some mistakes/differences or none at all. 
+Your task is to create a bash script (script.sh) that compares files against each other using diff. There are 4 Testcases, each with different versions of text files. Each Testcase contains some mistakes/differences or none at all. 
 
 Your goal is to write a bash script that: 
-* Checks for differences for all Testcases 
+* Compares the first file against each of the rest of the files, checking for differences   
 * Creates a new file for each Testcase that contains the output from the diff command. (It may be helpful to look into bash for loops.)
 * Store these files in a directory called diffoutput 
 
