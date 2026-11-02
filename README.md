@@ -71,7 +71,7 @@ If there are no differences on a line, `diff` will simply show the line common b
 ## Task
 This repository has 4 directories, `Testcase1` to `Testcase4`. Each directory contains one or more **pairs** of text files. The two files in a pair have the same name except for a `.1` or `.2` just before `.txt`. For example, `Version3.1.txt` and `Version3.2.txt` are a pair. Each pair contains some differences or none at all.
  
-You will write two bash scripts: `script.sh` and `check.sh`.
+You will write two bash scripts: `script.sh` and `check.sh`. Make sure these files run on the lab machines. 
  
 ### Part 1: `script.sh`
 Write a bash script called `script.sh` that compares the files in each pair using `diff`.
