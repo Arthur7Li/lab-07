@@ -93,7 +93,8 @@ Hints:
 * `[ -f file ]` tests whether a file exists
 * The first two lines of `diff -u` output are the file names and timestamps, which can differ between runs. `tail -n +3` prints a file starting from its third line, so you can skip those two lines when comparing
 * `exit 1` ends a script with a failure status
-Your `check.sh` will be tested against **incorrect** outputs as well as correct ones. A script that always prints `PASS` will not earn credit. 
+
+Your `check.sh` will be tested against **incorrect** outputs as well as correct ones. A script that always prints `PASS` will not earn marks. 
 
 ## Demo 
 No questions from TAs this time, we are looking for completion of this ILC. 
