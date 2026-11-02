@@ -69,14 +69,32 @@ If there are no differences on a line, `diff` will simply show the line common b
 ```
 
 ## Task
-Your task is to create a bash script (script.sh) that compares files against each other using diff. There are 4 Testcases, each with two different versions of text files. Each Testcase contains some mistakes/differences or none at all. 
+Your task is to create a bash script (script.sh) that compares files against each other using diff. There are 4 Testcases, each with different versions of text files. Each Testcase contains some mistakes/differences or none at all. 
 
 Your goal is to write a bash script that: 
-* Checks for differences for all Testcases 
+* Compares the first file against each of the rest of the files, checking for differences   
 * Creates a new file for each Testcase that contains the output from the diff command. (It may be helpful to look into bash for loops.)
 * Store these files in a directory called diffoutput 
 
 Each diff output file should be named by which Testcase files it went through (“Testcase#Output”). For example: You are comparing Testcase 1 version 1 and version 2 files, name the file: Testcase1Output, only if there are differences in the text. If there are no differences between the two files, do not generate any files. 
+
+Additionally, you must also write a bash script called `check.sh` that verifies the files your `script.sh` produced.
+ 
+Your `check.sh` must:
+* Be located in the root of your repository and work when run from there (`bash check.sh`)
+* Verify, for **each** of the 4 Testcases, that your output in `diffoutput` is correct:
+  * If the two versions of the Testcase differ, `diffoutput/Testcase#Output` must exist **and** its contents must match what `diff -u` reports for those two files
+  * If the two versions are identical, `diffoutput/Testcase#Output` must **not** exist
+* Print one line per Testcase saying `PASS` or `FAIL` (for example: `Testcase2: PASS`)
+* Exit with status `0` if every Testcase is correct, and a non-zero status if any Testcase is incorrect
+
+Hints:
+* `diff` and `cmp -s` return an exit status you can check with `$?` or an `if` statement: `0` means the files are the same, non-zero means they differ
+* `[ -f file ]` tests whether a file exists
+* The first two lines of `diff -u` output are the file names and timestamps, which can differ between runs. `tail -n +3` prints a file starting from its third line, so you can skip those two lines when comparing
+* `exit 1` ends a script with a failure status
+
+Your `check.sh` will be tested against **incorrect** outputs as well as correct ones. A script that always prints `PASS` will not earn marks. 
 
 ## Demo 
 No questions from TAs this time, we are looking for completion of this ILC. 
@@ -86,6 +104,6 @@ No questions from TAs this time, we are looking for completion of this ILC.
 
 2. Make sure your forked repository is public (Hint: Use git clone)
 
-3. After completing your bash script, be ready to show your script file and the diffoutput directory to TAs for your mark! 
+3. After completing your bash scripts, show your `script.sh`, your `check.sh`, and the `diffoutput` directory to TAs. Be ready to run `check.sh` to show that it passes on your output! 
 
 
