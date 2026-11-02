@@ -72,11 +72,12 @@ If there are no differences on a line, `diff` will simply show the line common b
 Your task is to create a bash script (script.sh) that compares files against each other using diff. There are 4 Testcases directories, each directory containing one or more pairs of text files. Each pair contains some mistakes/differences or none at all. 
 
 Your goal is to write a bash script that: 
+* Creates a directory called Testcase#Diff for each Testcase folder (# is the Testcase number) 
 * Compares the pairs of files against each other, finding differences    
-* Creates a new file for each pair that contains the output from the diff command. (It may be helpful to look into bash for loops.)
-* Store these files in a directory called diffoutput 
+* Creates a new file for each pair that contains the output from the diff command. (e.g. if you are comparing Version3.1.txt and Version 3.2.txt, the file should be called Version3Diff.txt)
+* Stores these files in the correct directory 
 
-Each diff output file should be named by which Testcase files it went through (“Testcase#Output”). For example: You are comparing Testcase 1 version 1 and version 2 files, name the file: Testcase1Output, only if there are differences in the text. If there are no differences between the two files, do not generate any files. 
+If there are no differences between the two files, do not generate a diff output file for that pair. If there are no differences in the entire Testcase folder, do not make a directory for that Testcase. 
 
 Additionally, you must also write a bash script called `check.sh` that verifies the files your `script.sh` produced.
  
