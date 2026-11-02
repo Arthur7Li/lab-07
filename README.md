@@ -69,38 +69,59 @@ If there are no differences on a line, `diff` will simply show the line common b
 ```
 
 ## Task
-Your task is to create a bash script (script.sh) that compares files against each other using diff. There are 4 Testcases directories, each directory containing one or more pairs of text files. Each pair contains some mistakes/differences or none at all. 
-
-Your goal is to write a bash script that: 
-* Creates a directory called Testcase#Diff for each Testcase folder (# is the Testcase number) 
-* Compares the pairs of files against each other, finding differences    
-* Creates a new file for each pair that contains the output from the diff command. (e.g. if you are comparing Version3.1.txt and Version 3.2.txt, the file should be called Version3Diff.txt)
-* Stores these files in the correct directory 
-
-If there are no differences between the two files, do not generate a diff output file for that pair. If there are no differences in the entire Testcase folder, do not make a directory for that Testcase. 
-
-Additionally, you must also write a bash script called `check.sh` that verifies the files your `script.sh` produced.
+This repository has 4 directories, `Testcase1` to `Testcase4`. Each directory contains one or more **pairs** of text files. The two files in a pair have the same name except for a `.1` or `.2` just before `.txt`. For example, `Version3.1.txt` and `Version3.2.txt` are a pair. Each pair contains some differences or none at all.
+ 
+You will write two bash scripts: `script.sh` and `check.sh`.
+ 
+### Part 1: `script.sh`
+Write a bash script called `script.sh` that compares the files in each pair using `diff`.
+ 
+Your script must:
+* Be located in the root of your repository and work when run from there with `bash script.sh`
+* Compare the two files in every pair with `diff -u`, with the `.1` file first and the `.2` file second (for example `diff -u Version3.1.txt Version3.2.txt`). The order matters, because swapping the files changes the output.
+* Save the `diff -u` output of each pair that differs in a file named after the pair, without the `.1`/`.2`, followed by `Diff.txt`. The pair `Version3.1.txt` and `Version3.2.txt` gives `Version3Diff.txt`. The file must contain only the output of `diff -u`.
+* Put these files in a directory called `Testcase#Diff` (`#` is the Testcase number), located in the root of your repository, **not** inside the `Testcase#` directory. For example: `Testcase3Diff/Version3Diff.txt`
+* Do not create an output file for a pair with no differences
+* Do not create the `Testcase#Diff` directory at all if there are no differences anywhere in that Testcase folder
+* Do not change anything inside the `Testcase#` directories
+* Give the same result no matter how many times it is run (hint: remove any old `Testcase#Diff` directory before creating a new one)
+It may be helpful to look into bash `for` loops.
+ 
+### Part 2: `check.sh`
+Write a bash script called `check.sh` that verifies the files your `script.sh` produced.
  
 Your `check.sh` must:
-* Be located in the root of your repository and work when run from there (`bash check.sh`)
-* Verify, for **each** of the 4 Testcases, that your output in `diffoutput` is correct:
-  * If the two versions of the Testcase differ, `diffoutput/Testcase#Output` must exist **and** its contents must match what `diff -u` reports for those two files
-  * If the two versions are identical, `diffoutput/Testcase#Output` must **not** exist
-* Print one line per Testcase saying `PASS` or `FAIL`
-    For example:
-          Testcase1: PASS
-          Testcase2: PASS
-          Testcase3: FAIL
-          Testcase4: PASS
+* Be located in the root of your repository and work when run from there with `bash check.sh`
+* Only **read** files. It must not run `script.sh`, create or change any files, or rely on any files other than the `Testcase#` directories and your output
+* Verify, for **each** of the 4 Testcases:
+  * If at least one pair in the Testcase differs, the `Testcase#Diff` directory must exist. If no pair differs, it must **not** exist.
+  * Every pair that differs must have its output file (for example `Version3Diff.txt`) in that directory, and its contents must match what `diff -u` reports for the two files
+  * A pair that is identical must **not** have an output file
+* Check every Testcase even if an earlier one fails
+**Printing and exit status**
+ 
+`check.sh` is graded by another script, so the format below must be followed exactly:
+* Print exactly one line per Testcase to standard output, for all 4 Testcases, in this form:
+  * `Testcase3: PASS` if that Testcase is correct
+  * `Testcase3: FAIL` if that Testcase is incorrect
+  
+  (capital `T`, no space between `Testcase` and the number, a colon, one space, then `PASS` or `FAIL`)
+* Do not print any other line starting with `Testcase#:` to standard output. If you want to explain what went wrong, print it to standard error instead (for example `echo "missing Testcase3Diff/Version2Diff.txt" >&2`) or start the line with something else
 * Exit with status `0` if every Testcase is correct, and a non-zero status if any Testcase is incorrect
-
+Example of correct output when Testcase3 is wrong and the others are right (the exit status is non-zero):
+```
+Testcase1: PASS
+Testcase2: PASS
+Testcase3: FAIL
+Testcase4: PASS
+```
+ 
 Hints:
 * `diff` and `cmp -s` return an exit status you can check with `$?` or an `if` statement: `0` means the files are the same, non-zero means they differ
-* `[ -f file ]` tests whether a file exists
+* `[ -f file ]` tests whether a file exists and `[ -d dir ]` tests whether a directory exists
 * The first two lines of `diff -u` output are the file names and timestamps, which can differ between runs. `tail -n +3` prints a file starting from its third line, so you can skip those two lines when comparing
 * `exit 1` ends a script with a failure status
-
-Your `check.sh` will be tested against **incorrect** outputs as well as correct ones. A script that always prints `PASS` will not earn marks. 
+Your `check.sh` will be tested against **incorrect** outputs as well as correct ones (for example, a missing `Testcase#Diff` directory, an output file with the wrong contents, or a `Testcase#Diff` directory that should not exist). A script that always prints `PASS` will not earn mark
 
 ## Demo 
 No questions from TAs this time, we are looking for completion of this ILC. 
