@@ -87,6 +87,7 @@ Your `check.sh` must:
   * If the two versions are identical, `diffoutput/Testcase#Output` must **not** exist
 * Print one line per Testcase saying `PASS` or `FAIL` (for example: `Testcase2: PASS`)
 * Exit with status `0` if every Testcase is correct, and a non-zero status if any Testcase is incorrect
+
 Hints:
 * `diff` and `cmp -s` return an exit status you can check with `$?` or an `if` statement: `0` means the files are the same, non-zero means they differ
 * `[ -f file ]` tests whether a file exists
