@@ -36,10 +36,7 @@ run() { if command -v timeout >/dev/null 2>&1; then timeout 30 "$@"; else "$@"; 
 RES_N=(); RES_OK=(); RES_MSG=()
 record() { RES_N+=("$1"); RES_OK+=("$2"); RES_MSG+=("$3"); }   # <testcase> <1|0> <message>
 
-# ---------------------------------------------------------------------------------------------
-# Independent reference logic: how pairs are formed, and what the output should be
-# (file "X.1.txt" + "X.2.txt" -> key "X"; spaces in the key are removed)
-# ---------------------------------------------------------------------------------------------
+# Match files with the same name but different number endings.
 pairs_for_dir() {   # <base> <dir>  ->  "key|fileA|fileB" (paths relative to base)
     local base=$1 dir=$2 f b key suf i n
     local keys=() files=() lines=""
@@ -92,6 +89,7 @@ make_golden() {     # <base>  writes the correct TestcaseNDiff/ folders into <ba
 
 listing_tc() { (cd "$1" && find . -mindepth 1 -path "./Testcase$2Diff*" | LC_ALL=C sort); }
 
+# Compare the generated files, ignoring the first two diff header lines.
 same_output_tc() {  # <goodbase> <otherbase> <n>: same files/dirs and contents (ignoring 2 header lines)
     local g=$1 o=$2 n=$3 f
     [ "$(listing_tc "$g" "$n")" = "$(listing_tc "$o" "$n")" ] || return 1
