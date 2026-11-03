@@ -131,6 +131,6 @@ No questions from TAs this time, we are looking for completion of this ILC.
 
 2. Make sure your forked repository is public (Hint: Use git clone)
 
-3. After completing your bash scripts, show your `script.sh`, your `check.sh`, and the `diffoutput` directory to TAs. Be ready to run `check.sh` to show that it passes on your output! 
+3. After completing your bash scripts, show your `script.sh`, your `check.sh`, and the Testcase#Diff directories to TAs. Be ready to run `check.sh` to show that it passes on your output! 
 
 
