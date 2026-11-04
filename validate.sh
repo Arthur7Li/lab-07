@@ -20,12 +20,15 @@
 # Only the given Testcase files are used; nothing is added except by editing/removing the
 # output folders in a temp copy. The repo itself is never modified.
 #
+# Every failure message starts with the script it is about ("script.sh:" or "check.sh:").
+# Either script can be tested before the other one exists (the missing one is reported).
+#
 # Exit status: 0 if every test passes, 1 otherwise, 2 on a setup problem.
 
 set -u
 
 REPO="$(cd "${1:-.}" 2>/dev/null && pwd)" || { echo "Usage: bash $0 [path-to-repo]"; exit 2; }
-[ -f "$REPO/check.sh" ] || { echo "No check.sh found in $REPO"; exit 2; }
+[ -f "$REPO/check.sh" ] || [ -f "$REPO/script.sh" ] || { echo "No check.sh or script.sh found in $REPO"; exit 2; }
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -107,7 +110,7 @@ copy_inputs() {     # <dest>
     local t
     mkdir -p "$1"
     for t in $TESTCASES; do cp -a "$REPO/$t" "$1/"; done
-    cp -a "$REPO/check.sh" "$1/"
+    [ -f "$REPO/check.sh" ] && cp -a "$REPO/check.sh" "$1/"
     [ -f "$REPO/script.sh" ] && cp -a "$REPO/script.sh" "$1/"
     return 0
 }
@@ -121,12 +124,48 @@ run_check() { OUT="$(cd "$1" && run bash check.sh 2>/dev/null)"; RC=$?; }
 
 expect_fail() {     # <label> <testcase number>   (runs check.sh in $GOOD, which is currently broken)
     run_check "$GOOD"
-    if [ "$RC" -eq 0 ]; then
-        record "$2" 0 "$1 (not detected: check.sh exited 0)"
+    if [ "$RC" -eq 124 ]; then
+        record "$2" 0 "check.sh: timed out (over 30 seconds) on broken output: $1"
+    elif [ "$RC" -eq 0 ]; then
+        if grep -q "^Testcase$2: FAIL" <<< "$OUT"; then
+            record "$2" 0 "check.sh: printed 'Testcase$2: FAIL' but exited 0 on broken output: $1 (it must exit non-zero when a Testcase fails)"
+        else
+            record "$2" 0 "check.sh: did not detect broken output: $1 (exited 0, no 'Testcase$2: FAIL' line)"
+        fi
     elif ! grep -q "^Testcase$2: FAIL" <<< "$OUT"; then
-        record "$2" 0 "$1 (exit $RC, but no 'Testcase$2: FAIL' line printed)"
+        record "$2" 0 "check.sh: exited $RC but printed no 'Testcase$2: FAIL' line on broken output: $1"
     else
         record "$2" 1 "$1"
+    fi
+}
+
+# Extra hints, shown at the end only when something failed
+NOTES=""
+note() { NOTES="${NOTES}    - $1"$'\n'; }
+
+# check.sh rejected correct output: try the same output in two other forms to find out why
+diagnose_correct_output() {
+    local t n same=1
+    if [ -n "${REGEN:-}" ] && [ -f "$REGEN/script.sh" ]; then
+        for t in $TESTCASES; do
+            same_output_tc "$GOOD" "$REGEN" "${t#Testcase}" || same=0
+        done
+        if [ "$same" -eq 1 ]; then
+            run_check "$REGEN"
+            if [ "$RC" -eq 0 ]; then
+                note "check.sh accepts the header lines your script.sh writes, but not the same output with different header lines. Compare with 'tail -n +3' on both sides, because the first two lines of 'diff -u' can differ."
+            fi
+        fi
+    fi
+    FULL="$TMP/full"; mkdir -p "$FULL"; cp -a "$REPO/." "$FULL/"; rm -rf "$FULL/.git"
+    for t in $TESTCASES; do
+        n=${t#Testcase}
+        rm -rf "$FULL/Testcase${n}Diff"
+        [ -d "$GOOD/Testcase${n}Diff" ] && cp -a "$GOOD/Testcase${n}Diff" "$FULL/"
+    done
+    run_check "$FULL"
+    if [ "$RC" -eq 0 ]; then
+        note "check.sh passes only when other files from your repo are present. It may read only the Testcase# folders and the Testcase#Diff output folders."
     fi
 }
 
@@ -137,7 +176,7 @@ if [ -f "$REPO/script.sh" ]; then
     for t in $TESTCASES; do
         n=${t#Testcase}
         if same_output_tc "$GOOD" "$REGEN" "$n"; then
-            record "$n" 1 "script.sh output"
+            record "$n" 1 "script.sh: output"
         elif [ -d "$GOOD/Testcase${n}Diff" ] && [ ! -d "$REGEN/Testcase${n}Diff" ]; then
             record "$n" 0 "script.sh did not create Testcase${n}Diff/"
         elif [ ! -d "$GOOD/Testcase${n}Diff" ] && [ -d "$REGEN/Testcase${n}Diff" ]; then
@@ -147,26 +186,53 @@ if [ -f "$REPO/script.sh" ]; then
         fi
     done
 else
-    record 0 0 "script.sh not found"
+    record 0 0 "script.sh: not found"
 fi
 
 # ------------------------------- 2. check.sh on correct output -------------------------------
-run_check "$GOOD"
-if [ "$RC" -eq 0 ]; then record 0 1 "check.sh exits 0 on correct output"
-else record 0 0 "check.sh exits 0 on correct output (got $RC)"; fi
-for t in $TESTCASES; do
-    n=${t#Testcase}
-    nlines=$(grep -c "^Testcase$n: " <<< "$OUT")
-    if [ "$nlines" -eq 1 ] && grep -q "^Testcase$n: PASS" <<< "$OUT"; then
-        record "$n" 1 "check.sh prints one PASS line on correct output"
+TEST_BROKEN=0
+if [ ! -f "$REPO/check.sh" ]; then
+    record 0 0 "check.sh: not found"
+else
+    run_check "$GOOD"
+    if [ "$RC" -eq 124 ]; then
+        record 0 0 "check.sh: timed out (over 30 seconds) on correct output. Remove any sleep or read, and don't run script.sh from it."
     else
-        record "$n" 0 "check.sh should print exactly one 'Testcase$n: PASS' line on correct output (found $nlines line(s) for it)"
+        TEST_BROKEN=1
+        CHECK_RC=$RC; ALL_PASS=1
+        for t in $TESTCASES; do
+            n=${t#Testcase}
+            nlines=$(grep -c "^Testcase$n: " <<< "$OUT")
+            if [ "$nlines" -eq 1 ] && grep -q "^Testcase$n: PASS" <<< "$OUT"; then
+                record "$n" 1 "check.sh: prints one PASS line on correct output"
+            else
+                ALL_PASS=0
+                if [ "$nlines" -eq 0 ]; then
+                    record "$n" 0 "check.sh: printed no 'Testcase$n:' line on correct output (expected 'Testcase$n: PASS')"
+                elif [ "$nlines" -gt 1 ]; then
+                    record "$n" 0 "check.sh: printed $nlines 'Testcase$n:' lines on correct output (expected exactly one)"
+                else
+                    record "$n" 0 "check.sh: printed '$(grep "^Testcase$n: " <<< "$OUT")' on correct output (expected 'Testcase$n: PASS')"
+                fi
+            fi
+        done
+        if [ "$CHECK_RC" -eq 0 ]; then
+            record 0 1 "check.sh: exits 0 on correct output"
+        elif [ "$ALL_PASS" -eq 1 ]; then
+            record 0 0 "check.sh: printed every PASS line correctly, but exited $CHECK_RC (it must exit 0). A last line like '[ \$rc -eq 1 ] && exit 1' causes this; end with 'exit \$rc'."
+        else
+            record 0 0 "check.sh: exited $CHECK_RC on correct output (it must exit 0)"
+        fi
+        [ "$ALL_PASS" -eq 1 ] || diagnose_correct_output
     fi
-done
+    if grep -v '^[[:space:]]*#' "$REPO/check.sh" | grep -qE '/Users/|/home/|~/|\$HOME|git rev-parse|cd[[:space:]]+["'\'']?/'; then
+        note "check.sh seems to use a fixed path or git to find your repo, so it may read your real files instead of the copy being tested. Use relative paths such as Testcase1/ and Testcase1Diff/."
+    fi
+fi
 
 # ------------------------------- 3. check.sh on broken output -------------------------------
 # Each case breaks $GOOD in place, runs check.sh, then restores it (no extra copies).
-for t in $TESTCASES; do
+[ "$TEST_BROKEN" -eq 1 ] && for t in $TESTCASES; do
     n=${t#Testcase}; out="$GOOD/Testcase${n}Diff"
     if [ -d "$out" ]; then
         # folder missing although it should exist
@@ -230,5 +296,10 @@ for t in $TESTCASES; do
         done
     fi
 done
+
+if [ "$BAD_TC" -gt 0 ] && [ -n "$NOTES" ]; then
+    echo "Possible causes:"
+    printf '%s' "$NOTES"
+fi
 
 [ "$BAD_TC" -eq 0 ]
