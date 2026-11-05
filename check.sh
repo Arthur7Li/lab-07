@@ -11,7 +11,7 @@ for i in {1..4}; do
     for file1 in "$src_dir"/*.1.txt; do
         [ -f "$file1" ] || continue
 
-        file2="$file1%.1.txt}.2.txt"
+        file2="{$file1%.1.txt}.2.txt"
         [ -f "$file2" ] || continue
 
         stem=$(basename "$file1" .1.txt)
@@ -35,7 +35,7 @@ for i in {1..4}; do
         else
 
             if [ -f "$diff_file" ]; then
-                echo "Unexpected diff file exists: $diff_file >&2
+                echo "Unexpected diff file exists: $diff_file" >&2
                 tc_passed=false
             fi
         fi
