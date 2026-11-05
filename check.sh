@@ -62,5 +62,3 @@ for i in {1..4}; do
 done
 
 exit "$overall_status"
-        
-      
